@@ -63,28 +63,46 @@ class StochasticLorenz(object):
     noise_type = "diagonal"
     sde_type = "ito"
 
-    def __init__(self, a: Sequence = (10., 28., 8 / 3), b: Sequence = (.1, .28, .3)):
+    def __init__(self, a: Sequence = (10., 28., 8 / 3), b: Sequence = (.1)):
         super(StochasticLorenz, self).__init__()
         self.a = a
         self.b = b
 
     def f(self, t, y):
-        x1, x2, x3 = torch.split(y, split_size_or_sections=(1, 1, 1), dim=1)
+        x1, x2 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
         a1, a2, a3 = self.a
 
-        f1 = a1 * (x2 - x1)
-        f2 = a2 * x1 - x2 - x1 * x3
-        f3 = x1 * x2 - a3 * x3
-        return torch.cat([f1, f2, f3], dim=1)
+        f1 = a1 * x1
+        f2 = a2 * (a3 - x2) 
+    
+        return torch.cat([f1, f2], dim=1)
+
+        # a1 * x1
+        # a2 * (a3 - x2) 
 
     def g(self, t, y):
-        x1, x2, x3 = torch.split(y, split_size_or_sections=(1, 1, 1), dim=1)
-        b1, b2, b3 = self.b
+        x1, x2 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
+        b1 = self.b
 
-        g1 = x1 * b1
-        g2 = x2 * b2
-        g3 = x3 * b3
-        return torch.cat([g1, g2, g3], dim=1)
+        g1 = np.sqrt(x1) 
+        g2 = b1 * np.sqrt(x1) 
+        
+        return torch.cat([g1, g2], dim=1)
+
+        '''
+        S_t = x1
+        v_t = x2
+
+        mu =a1
+        kappa = a2
+        theta = a3
+        psi = a4 
+
+
+        g_1 x1 * sqrt(x2)
+
+        g_2 a4 * sqrt(x2)
+        '''
 
     @torch.no_grad()
     def sample(self, x0, ts, noise_std, normalize):
