@@ -1,3 +1,17 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Train a latent SDE on data from a stochastic Lorenz attractor.
 
 Reproduce the toy example in Section 7.2 of https://arxiv.org/pdf/2001.01328.pdf
@@ -6,7 +20,7 @@ To run this file, first run the following to install extra requirements:
 pip install fire
 
 To run, execute:
-python -m examples.latent_sde_bsm
+python -m examples.latent_sde_lorenz
 """
 import logging
 import os
@@ -49,30 +63,30 @@ class StochasticLorenz(object):
     noise_type = "diagonal"
     sde_type = "ito"
 
-    def __init__(self, a: Sequence = (10), b: Sequence = (1)):
+    def __init__(self, a: Sequence = (10.), b: Sequence = (.1)):
         super(StochasticLorenz, self).__init__()
         self.a = a
         self.b = b
 
     def f(self, t, y):
-        x1 = torch.split(y, split_size_or_sections=1, dim=1)
+        x1 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
         a1 = self.a
 
         f1 = a1 * x1
-         
     
-        return torch.cat(f1, dim=1)
+        return torch.cat([f1, f2], dim=1)
 
         # a1 * x1
         # a2 * (a3 - x2) 
 
     def g(self, t, y):
-        x1 = torch.split(y, split_size_or_sections=1, dim=1)
+        x1, x2 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
         b1 = self.b
 
-        g1 = x1 
+        g1 = b1*x1
+
         
-        return torch.cat(g1, dim=1)
+        return torch.cat([g1, g2, g3], dim=1)
 
         '''
         S_t = x1
@@ -222,7 +236,7 @@ def make_dataset(t0, t1, batch_size, noise_std, train_dir, device):
         if ts[0] != t0 or ts[-1] != t1:
             raise ValueError("Times interval [t0, t1] has changed; please delete and regenerate the data.")
     else:
-        _y0 = torch.randn(batch_size, 1, device=device)
+        _y0 = torch.randn(batch_size, 3, device=device)
         ts = torch.linspace(t0, t1, steps=100, device=device)
         xs = StochasticLorenz().sample(_y0, ts, noise_std, normalize=True)
 
@@ -238,40 +252,40 @@ def vis(xs, ts, latent_sde, bm_vis, img_path, num_samples=10):
     ax00 = fig.add_subplot(gs[0, 0], projection='3d')
     ax01 = fig.add_subplot(gs[0, 1], projection='3d')
 
-    # # Left plot: data.
-    # z1 = np.split(xs.cpu().numpy(), indices_or_sections=1, axis=-1)
-    # [ax00.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
-    # ax00.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
-    # ax00.set_yticklabels([])
-    # ax00.set_xticklabels([])
-    # ax00.set_zticklabels([])
-    # ax00.set_xlabel('$z_1$', labelpad=0., fontsize=16)
-    # ax00.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
-    # ax00.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
-    # ax00.set_title('Data', fontsize=20)
-    # xlim = ax00.get_xlim()
-    # ylim = ax00.get_ylim()
-    # zlim = ax00.get_zlim()
+    # Left plot: data.
+    z1, z2, z3 = np.split(xs.cpu().numpy(), indices_or_sections=3, axis=-1)
+    [ax00.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
+    ax00.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
+    ax00.set_yticklabels([])
+    ax00.set_xticklabels([])
+    ax00.set_zticklabels([])
+    ax00.set_xlabel('$z_1$', labelpad=0., fontsize=16)
+    ax00.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
+    ax00.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
+    ax00.set_title('Data', fontsize=20)
+    xlim = ax00.get_xlim()
+    ylim = ax00.get_ylim()
+    zlim = ax00.get_zlim()
 
     # Right plot: samples from learned model.
-    # xs = latent_sde.sample(batch_size=xs.size(1), ts=ts, bm=bm_vis).cpu().numpy()
-    # z1 = np.split(xs, indices_or_sections=1, axis=-1)
+    xs = latent_sde.sample(batch_size=xs.size(1), ts=ts, bm=bm_vis).cpu().numpy()
+    z1, z2, z3 = np.split(xs, indices_or_sections=3, axis=-1)
 
-    
-    # ax01.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
-    # ax01.set_yticklabels([])
-    # ax01.set_xticklabels([])
-    # ax01.set_zticklabels([])
-    # ax01.set_xlabel('$z_1$', labelpad=0., fontsize=16)
-    # ax01.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
-    # ax01.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
-    # ax01.set_title('Samples', fontsize=20)
-    # ax01.set_xlim(xlim)
-    # ax01.set_ylim(ylim)
-    # ax01.set_zlim(zlim)
+    [ax01.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
+    ax01.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
+    ax01.set_yticklabels([])
+    ax01.set_xticklabels([])
+    ax01.set_zticklabels([])
+    ax01.set_xlabel('$z_1$', labelpad=0., fontsize=16)
+    ax01.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
+    ax01.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
+    ax01.set_title('Samples', fontsize=20)
+    ax01.set_xlim(xlim)
+    ax01.set_ylim(ylim)
+    ax01.set_zlim(zlim)
 
-    # plt.savefig(img_path)
-    # plt.close()
+    plt.savefig(img_path)
+    plt.close()
 
 
 def main(
@@ -295,7 +309,7 @@ def main(
 
     xs, ts = make_dataset(t0=t0, t1=t1, batch_size=batch_size, noise_std=noise_std, train_dir=train_dir, device=device)
     latent_sde = LatentSDE(
-        data_size=1,
+        data_size=3,
         latent_size=latent_size,
         context_size=context_size,
         hidden_size=hidden_size,

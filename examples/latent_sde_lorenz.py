@@ -87,7 +87,7 @@ class StochasticLorenz(object):
         g1 = np.sqrt(x1) 
         g2 = b1 * np.sqrt(x1) 
         
-        return torch.cat([g1, g2], dim=1)
+        return torch.cat([g1, g2, g3], dim=1)
 
         '''
         S_t = x1
