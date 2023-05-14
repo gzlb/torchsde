@@ -251,7 +251,8 @@ def get_data_volatility(batch_size, device):
     dataset = torch.utils.data.TensorDataset(ys_coeffs)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    return ts, data_size, dataloader
+    
+    return ts, data_size, dataloader, ys_coeffs
 
 
 def get_data(batch_size, device):
@@ -262,21 +263,22 @@ def get_data(batch_size, device):
         sde_type = 'ito'
         noise_type = 'diagonal' #diagonal 
 
-        def __init__(self, mu, theta, sigma):
+        def __init__(self, mu, theta, v):
             super().__init__()
             self.register_buffer('mu', torch.as_tensor(mu))
             self.register_buffer('theta', torch.as_tensor(theta))
-            self.register_buffer('sigma', torch.as_tensor(sigma))
+            self.register_buffer('v', torch.as_tensor(v))
 
         def f(self, t, y):
             return self.mu * t - self.theta * y
 
         def g(self, t, y):
             # self.sigma*y
-            return self.sigma*y
+            return self.v*y
 
                 #OrnsteinUhlenbeckSDE(mu=0.00, theta=-0.1, sigma=0.4).to(device)
-    ou_sde = OrnsteinUhlenbeckSDE(mu=0.00, theta=-0.1, sigma=0.4).to(device)
+    ts, data_size, dataloader, v = get_data_volatility(batch_size, device)
+    ou_sde = OrnsteinUhlenbeckSDE(mu=0.00, theta=-0.1, v=dataloader).to(device)
     y0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
     ts = torch.linspace(0, t_size - 1, t_size, device=device)
     ys = torchsde.sdeint(ou_sde, y0, ts, dt=1e-1)
@@ -426,7 +428,7 @@ def main(
         print("Warning: CUDA not available; falling back to CPU but this is likely to be very slow.")
 
     # Data
-    ts_vol, data_size_vol, train_dataloader_vol = get_data_volatility(batch_size=batch_size, device=device)
+    ts_vol, data_size_vol, train_dataloader_vol, ys_coeff = get_data_volatility(batch_size=batch_size, device=device)
     infinite_train_dataloader_vol = (elem for it in iter(lambda: train_dataloader_vol, None) for elem in it)
 
     ts, data_size, train_dataloader = get_data(batch_size=batch_size, device=device)
