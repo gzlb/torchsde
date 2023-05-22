@@ -173,7 +173,7 @@ def get_data(batch_size, device):
 
     class HestonSDE(torch.nn.Module):
         sde_type = 'ito'
-        noise_type = 'diagonal' #diagonal 
+        noise_type = 'general' #diagonal 
 
         def __init__(self, mu, theta, sigma, kappa, xi):
             super().__init__()
@@ -181,19 +181,21 @@ def get_data(batch_size, device):
             self.register_buffer('theta', torch.as_tensor(theta))
             self.register_buffer('sigma', torch.as_tensor(sigma))
             self.register_buffer('kappa', torch.as_tensor(kappa))
-            self.register_buffer('theta', torch.as_tensor(theta))
             self.register_buffer('xi', torch.as_tensor(xi))
 
-        def f(self, t, x, y):
-            return np.array((self.mu * x, self.kappa * (self.theta - y ) ))
+        def f(self, t, y, x):
+            return  np.array((self.mu * x, self.kappa * (self.theta - y )))
 
-        def g(self, t, x, y):
+        def g(self, t, y, x):
             # self.sigma*y
-            return np.array((x*np.sqrt(np.maximum(y, 0)), self.xi * np.sqrt(np.maximum(y, 0) ))) 
+            return x*np.sqrt(np.maximum(y, 0)), self.xi * np.sqrt(np.maximum(y, 0))
 
                 #OrnsteinUhlenbeckSDE(mu=0.00, theta=-0.1, sigma=0.4).to(device)
-    ou_sde = HestonSDE(mu=0.00, theta=-0.1, sigma=0.4, kappa = 0, theta = 0, xi = 0 ).to(device)
-    y0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
+    ou_sde = HestonSDE(mu=0.00, theta=-0.1, sigma=0.4, kappa = 0, xi = 0 ).to(device)
+    x0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
+    z0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
+    y0 = torch.cat([x0, z0], dim=1)
+   
     ts = torch.linspace(0, t_size - 1, t_size, device=device)
     ys = torchsde.sdeint(ou_sde, y0, ts, dt=1e-1)
 
