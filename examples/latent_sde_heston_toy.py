@@ -244,6 +244,8 @@ def make_dataset(t0, t1, batch_size, noise_std, train_dir, device):
         os.makedirs(os.path.dirname(data_path), exist_ok=True)
         torch.save({'xs': xs, 'ts': ts}, data_path)
         logging.warning(f'Stored toy data at: {data_path}')
+
+    print(torch.load(data_path))
     return xs, ts
 
 
