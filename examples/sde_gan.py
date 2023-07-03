@@ -212,7 +212,7 @@ def get_data(batch_size, device):
             return self.sigma*y
 
                 #OrnsteinUhlenbeckSDE(mu=0.00, theta=-0.1, sigma=0.4).to(device)
-    ou_sde = OrnsteinUhlenbeckSDE(mu=0.00, theta=-0.1, sigma=0.4).to(device)
+    ou_sde = OrnsteinUhlenbeckSDE(mu=0.00, theta=-.25, sigma=0.1).to(device)
     y0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
     ts = torch.linspace(0, t_size - 1, t_size, device=device)
     ys = torchsde.sdeint(ou_sde, y0, ts, dt=1e-1)
@@ -275,7 +275,7 @@ def plot(ts, generator, dataloader, num_plot_samples, plot_locs):
         _, bins, _ = plt.hist(real_samples_time.cpu().numpy(), bins=32, alpha=0.7, label='Real', color='dodgerblue',
                               density=True)
         bin_width = bins[1] - bins[0]
-        num_bins = int((generated_samples_time.max() - generated_samples_time.min()).item() // bin_width)
+        num_bins = int(abs((generated_samples_time.max() - generated_samples_time.min())).item() // bin_width)
         plt.hist(generated_samples_time.cpu().numpy(), bins=num_bins, alpha=0.7, label='Generated', color='crimson',
                  density=True)
         plt.legend()
@@ -349,13 +349,13 @@ def main(
         init_mult1=3,           # Changing the initial parameter size can help.
         init_mult2=0.5,         #
         weight_decay=0.01,      # Weight decay.
-        swa_step_start=5000,    # When to start using stochastic weight averaging.
+        swa_step_start=500,    # When to start using stochastic weight averaging.
 
         # Evaluation and plotting hyperparameters
         steps_per_print=10,                   # How often to print the loss.
         num_plot_samples=50,                  # How many samples to use on the plots at the end.
         plot_locs=(0.1, 0.3, 0.5, 0.7, 0.9),  # Plot some marginal distributions at this proportion of the way along.
-):
+):  
     is_cuda = torch.cuda.is_available()
     device = 'cuda' if is_cuda else 'cpu'
     if not is_cuda:

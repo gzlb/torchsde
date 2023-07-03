@@ -60,48 +60,32 @@ class StochasticLorenz(object):
     Details described in Section 7.2 https://arxiv.org/pdf/2001.01328.pdf
     Default a, b from https://openreview.net/pdf?id=HkzRQhR9YX
     """
-    noise_type = "diagonal"
+    noise_type = "scalar"
     sde_type = "ito"
 
-    def __init__(self, a: Sequence = (10.), b: Sequence = (.1)):
+    def __init__(self, a: Sequence = (10.,0,0), b: Sequence = (.1, 0, 0)):
         super(StochasticLorenz, self).__init__()
         self.a = a
         self.b = b
 
     def f(self, t, y):
-        x1 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
-        a1 = self.a
+        x1, x2, x3 = torch.split(y, split_size_or_sections=(1, 1, 1), dim=1)
+        a1, a2, a3 = self.a
 
-        f1 = a1 * x1
-    
-        return torch.cat([f1, f2], dim=1)
-
-        # a1 * x1
-        # a2 * (a3 - x2) 
+        f1 = a1 * (x2 - x1)
+        f2 = a2 * x1 - x2 - x1 * x3
+        f3 = x1 * x2 - a3 * x3
+        return torch.cat([f1, f2, f3], dim=1)
 
     def g(self, t, y):
-        x1, x2 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
-        b1 = self.b
+        x1, x2, x3 = torch.split(y, split_size_or_sections=(1, 1, 1), dim=1)
+        b1, b2, b3 = self.b
 
-        g1 = b1*x1
-
-        
-        return torch.cat([g1, g2, g3], dim=1)
-
-        '''
-        S_t = x1
-        v_t = x2
-
-        mu =a1
-        kappa = a2
-        theta = a3
-        psi = a4 
-
-
-        g_1 x1 * sqrt(x2)
-
-        g_2 a4 * sqrt(x2)
-        '''
+        g1 =  b1
+        g1 = torch.tensor(g1)
+        g2 = x2 * b2
+        g3 = x3 * b3
+        return g1
 
     @torch.no_grad()
     def sample(self, x0, ts, noise_std, normalize):
@@ -226,23 +210,23 @@ class LatentSDE(nn.Module):
 
 
 def make_dataset(t0, t1, batch_size, noise_std, train_dir, device):
-    data_path = os.path.join(train_dir, 'lorenz_data.pth')
-    if os.path.exists(data_path):
-        data_dict = torch.load(data_path)
-        xs, ts = data_dict['xs'], data_dict['ts']
-        logging.warning(f'Loaded toy data at: {data_path}')
-        if xs.shape[1] != batch_size:
-            raise ValueError("Batch size has changed; please delete and regenerate the data.")
-        if ts[0] != t0 or ts[-1] != t1:
-            raise ValueError("Times interval [t0, t1] has changed; please delete and regenerate the data.")
-    else:
-        _y0 = torch.randn(batch_size, 3, device=device)
-        ts = torch.linspace(t0, t1, steps=100, device=device)
-        xs = StochasticLorenz().sample(_y0, ts, noise_std, normalize=True)
+    # data_path = os.path.join(train_dir, 'none.pth')
+    # if os.path.exists(data_path):
+    #     data_dict = torch.load(data_path)
+    #     xs, ts = data_dict['xs'], data_dict['ts']
+    #     logging.warning(f'Loaded toy data at: {data_path}')
+    #     if xs.shape[1] != batch_size:
+    #         raise ValueError("Batch size has changed; please delete and regenerate the data.")
+    #     if ts[0] != t0 or ts[-1] != t1:
+    #         raise ValueError("Times interval [t0, t1] has changed; please delete and regenerate the data.")
+    # else:
+    _y0 = torch.randn(batch_size, 3, device=device)
+    ts = torch.linspace(t0, t1, steps=100, device=device)
+    xs = StochasticLorenz().sample(_y0, ts, noise_std, normalize=True)
 
-        os.makedirs(os.path.dirname(data_path), exist_ok=True)
-        torch.save({'xs': xs, 'ts': ts}, data_path)
-        logging.warning(f'Stored toy data at: {data_path}')
+    # os.makedirs(os.path.dirname(data_path), exist_ok=True)
+    # torch.save({'xs': xs, 'ts': ts}, data_path)
+    # logging.warning(f'Stored toy data at: {data_path}')
     return xs, ts
 
 
