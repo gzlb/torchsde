@@ -195,7 +195,7 @@ def get_data(batch_size, device):
     t_size = 64
 
     class HestonSDE(torch.nn.Module):
-        sde_type = 'ito'
+        sde_type = 'stratonovich'
         noise_type = 'general' #diagonal 
 
         def __init__(self, mu, theta, xi, kappa, corr):
@@ -218,14 +218,23 @@ def get_data(batch_size, device):
             # self.sigma*y
             s, v  = torch.split(y, split_size_or_sections=(1, 1), dim=1)
             v = torch.clamp(v, min=0)  # Set values less than zero to zero
-            g1 = s*torch.sqrt(v) @ self.corr 
-            g2 = self.xi*torch.sqrt(v) @ torch.sqrt(1 - self.corr ** 2)
+            
+            g1 = torch.sqrt(v) * s * self.corr
+
+            g2 = self.xi * torch.sqrt(v) * torch.sqrt(1 - self.corr ** 2)
+
+
+
+            g1 = g1.unsqueeze(-1)  # Add an extra dimension
+            g2 = g2.unsqueeze(-1)  # Add an extra dimension
 
             return torch.cat([g1, g2], dim=1)
 
               
     ou_sde = HestonSDE(mu=0.00, theta=-0.1, xi=0.4, kappa=0.2, corr = 0.25).to(device)
-    y0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
+    s0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
+    v0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
+    y0 = torch.cat([s0, v0], dim=1)
     ts = torch.linspace(0, t_size - 1, t_size, device=device)
     ys = torchsde.sdeint(ou_sde, y0, ts, dt=1e-1)
 
@@ -298,7 +307,7 @@ def evaluate_loss(ts, batch_size, dataloader, generator, discriminator):
 def main(
         # Architectural hyperparameters. These are quite small for illustrative purposes.
         initial_noise_size=5,  # How many noise dimensions to sample at the start of the SDE.
-        noise_size=3,          # How many dimensions the Brownian motion has.
+        noise_size=2,          # How many dimensions the Brownian motion has.
         hidden_size=16,        # How big the hidden size of the generator SDE and the discriminator CDE are.
         mlp_size=16,           # How big the layers in the various MLPs are.
         num_layers=1,          # How many hidden layers to have in the various MLPs.

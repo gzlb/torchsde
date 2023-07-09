@@ -270,10 +270,11 @@ def get_data(batch_size, device):
             self.register_buffer('v', torch.as_tensor(v))
 
         def f(self, t, y):
+
             return self.mu * t - self.theta * y
 
         def g(self, t, y):
-            # self.sigma*y
+     
             return self.v*y
 
                 #OrnsteinUhlenbeckSDE(mu=0.00, theta=-0.1, sigma=0.4).to(device)
@@ -282,7 +283,6 @@ def get_data(batch_size, device):
     y0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
     ts = torch.linspace(0, t_size - 1, t_size, device=device)
     ys = torchsde.sdeint(ou_sde, y0, ts, dt=1e-1)
-
     ###################
     # To demonstrate how to handle irregular data, then here we additionally drop some of the data (by setting it to
     # NaN.)
