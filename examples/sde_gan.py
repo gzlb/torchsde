@@ -76,7 +76,7 @@ class MLP(torch.nn.Module):
 ###################
 class GeneratorFunc(torch.nn.Module):
     sde_type = 'stratonovich'
-    noise_type = 'general'
+    noise_type = 'diagonal'
 
     def __init__(self, noise_size, hidden_size, mlp_size, num_layers):
         super().__init__()
@@ -195,7 +195,7 @@ def get_data(batch_size, device):
     t_size = 64
 
     class OrnsteinUhlenbeckSDE(torch.nn.Module):
-        sde_type = 'ito'
+        sde_type = 'stratonovich'
         noise_type = 'diagonal' #diagonal 
 
         def __init__(self, mu, theta, sigma):
