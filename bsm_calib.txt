@@ -1,0 +1,22 @@
+Warning: CUDA not available; falling back to CPU but this is likely to be very slow.
+Calibrating with hyperparameters: {'initial_noise_size': 5, 'noise_size': 3, 'hidden_size': 16, 'mlp_size': 16, 'num_layers': 1,
+
+ 'generator_lr': 0.0002, 'discriminator_lr': 0.0005, 'batch_size': 1024, 'steps': 1000, 
+ 'init_mult1': 1, 
+ 'init_mult2': 0.1, 'weight_decay': 0.01, 'swa_step_start': 5000, 'steps_per_print': 10, 'num_plot_samples': 50, 'plot_locs': (0.1, 0.3, 0.5, 0.7, 0.9), 'error': [], 'is_cuda': False, 'device': 'cpu', 'ts': tensor([ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13.,
+        14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25., 26., 27.,
+        28., 29., 30., 31., 32., 33., 34., 35., 36., 37., 38., 39., 40., 41.,
+        42., 43., 44., 45., 46., 47., 48., 49., 50., 51., 52., 53., 54., 55.,
+        56., 57., 58., 59., 60., 61., 62., 63.]), 'data_size': 1, 'infinite_train_dataloader': <generator object training.<locals>.<genexpr> at 0x7fb79018fba0>, 'train_dataloader': <torch.utils.data.dataloader.DataLoader object at 0x7fb7881e7fa0>}
+
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 1000/1000 [14:12<00:00,  1.17it/s]
+Warning: CUDA not available; falling back to CPU but this is likely to be very slow.
+Calibrating with hyperparameters: {'initial_noise_size': 5, 'noise_size': 3, 'hidden_size': 16,
+ 'mlp_size': 16, 'num_layers': 1, 'generator_lr': 0.0002, 'discriminator_lr': 0.0005, 'batch_size': 1024, 
+ 'steps': 1000, 'init_mult1': 1, 'init_mult2': 0.3, 'weight_decay': 0.01, 'swa_step_start': 5000,
+  'steps_per_print': 10, 'num_plot_samples': 50, 'plot_locs': (0.1, 0.3, 0.5, 0.7, 0.9), 'error': [], 'is_cuda': False, 'device': 'cpu', 'ts': tensor([ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13.,
+        14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25., 26., 27.,
+        28., 29., 30., 31., 32., 33., 34., 35., 36., 37., 38., 39., 40., 41.,
+        42., 43., 44., 45., 46., 47., 48., 49., 50., 51., 52., 53., 54., 55.,
+        56., 57., 58., 59., 60., 61., 62., 63.]), 'data_size': 1, 'infinite_train_dataloader': <generator object training.<locals>.<genexpr> at 0x7f8c80762430>, 'train_dataloader': <torch.utils.data.dataloader.DataLoader object at 0x7f8c98f5df70>}
+Step:   0 Loss (unaveraged): -56.5446                                                                       

@@ -63,7 +63,7 @@ class StochasticLorenz(object):
     noise_type = "diagonal"
     sde_type = "ito"
 
-    def __init__(self, a = 10., b = 0.1):
+    def __init__(self, a = 0.1, b = 0.25):
         super(StochasticLorenz, self).__init__()
         self.a = a
         self.b = b
@@ -225,46 +225,46 @@ def make_dataset(t0, t1, batch_size, noise_std, train_dir, device):
     return xs, ts
 
 
-def vis(xs, ts, latent_sde, bm_vis, img_path, num_samples=10):
-    fig = plt.figure(figsize=(20, 9))
-    gs = gridspec.GridSpec(1, 2)
-    ax00 = fig.add_subplot(gs[0, 0], projection='3d')
-    ax01 = fig.add_subplot(gs[0, 1], projection='3d')
+# def vis(xs, ts, latent_sde, bm_vis, img_path, num_samples=10):
+#     fig = plt.figure(figsize=(20, 9))
+#     gs = gridspec.GridSpec(1, 2)
+#     ax00 = fig.add_subplot(gs[0, 0], projection='3d')
+#     ax01 = fig.add_subplot(gs[0, 1], projection='3d')
 
-    # Left plot: data.
-    z1, z2, z3 = np.split(xs.cpu().numpy(), indices_or_sections=3, axis=-1)
-    [ax00.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
-    ax00.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
-    ax00.set_yticklabels([])
-    ax00.set_xticklabels([])
-    ax00.set_zticklabels([])
-    ax00.set_xlabel('$z_1$', labelpad=0., fontsize=16)
-    ax00.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
-    ax00.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
-    ax00.set_title('Data', fontsize=20)
-    xlim = ax00.get_xlim()
-    ylim = ax00.get_ylim()
-    zlim = ax00.get_zlim()
+#     # Left plot: data.
+#     z1, z2, z3 = np.split(xs.cpu().numpy(), indices_or_sections=3, axis=-1)
+#     [ax00.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
+#     ax00.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
+#     ax00.set_yticklabels([])
+#     ax00.set_xticklabels([])
+#     ax00.set_zticklabels([])
+#     ax00.set_xlabel('$z_1$', labelpad=0., fontsize=16)
+#     ax00.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
+#     ax00.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
+#     ax00.set_title('Data', fontsize=20)
+#     xlim = ax00.get_xlim()
+#     ylim = ax00.get_ylim()
+#     zlim = ax00.get_zlim()
 
-    # Right plot: samples from learned model.
-    xs = latent_sde.sample(batch_size=xs.size(1), ts=ts, bm=bm_vis).cpu().numpy()
-    z1, z2, z3 = np.split(xs, indices_or_sections=3, axis=-1)
+#     # Right plot: samples from learned model.
+#     xs = latent_sde.sample(batch_size=xs.size(1), ts=ts, bm=bm_vis).cpu().numpy()
+#     z1, z2, z3 = np.split(xs, indices_or_sections=3, axis=-1)
 
-    [ax01.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
-    ax01.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
-    ax01.set_yticklabels([])
-    ax01.set_xticklabels([])
-    ax01.set_zticklabels([])
-    ax01.set_xlabel('$z_1$', labelpad=0., fontsize=16)
-    ax01.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
-    ax01.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
-    ax01.set_title('Samples', fontsize=20)
-    ax01.set_xlim(xlim)
-    ax01.set_ylim(ylim)
-    ax01.set_zlim(zlim)
+#     [ax01.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
+#     ax01.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
+#     ax01.set_yticklabels([])
+#     ax01.set_xticklabels([])
+#     ax01.set_zticklabels([])
+#     ax01.set_xlabel('$z_1$', labelpad=0., fontsize=16)
+#     ax01.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
+#     ax01.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
+#     ax01.set_title('Samples', fontsize=20)
+#     ax01.set_xlim(xlim)
+#     ax01.set_ylim(ylim)
+#     ax01.set_zlim(zlim)
 
-    plt.savefig(img_path)
-    plt.close()
+#     plt.savefig(img_path)
+#     plt.close()
 
 
 def main(
@@ -281,10 +281,11 @@ def main(
         pause_every=50,
         noise_std=0.01,
         adjoint=False,
-        train_dir='./dump/lorenz/',
+        train_dir='.',
         method="euler",
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    file_loss = open("LatentBSM.txt", "w")
 
     xs, ts = make_dataset(t0=t0, t1=t1, batch_size=batch_size, noise_std=noise_std, train_dir=train_dir, device=device)
     latent_sde = LatentSDE(
@@ -316,8 +317,10 @@ def main(
                 f'global_step: {global_step:06d}, lr: {lr_now:.5f}, '
                 f'log_pxs: {log_pxs:.4f}, log_ratio: {log_ratio:.4f} loss: {loss:.4f}, kl_coeff: {kl_scheduler.val:.4f}'
             )
-            img_path = os.path.join(train_dir, f'global_step_{global_step:06d}.pdf')
-            vis(xs, ts, latent_sde, bm_vis, img_path)
+
+            file_loss.write(f"{global_step:06d}\t{loss:.4f}\n")
+            img_path = os.path.join(train_dir, f'BSM{global_step:06d}.pdf')
+            # vis(xs, ts, latent_sde, bm_vis, img_path)
 
 
 if __name__ == "__main__":

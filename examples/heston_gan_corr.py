@@ -27,7 +27,7 @@ pip install fire
 pip install git+https://github.com/patrick-kidger/torchcde.git
 
 To run, execute:
-python -m examples.sde_gan
+python -m examples.heston_gan_corr
 """
 import fire
 import matplotlib.pyplot as plt
@@ -231,9 +231,9 @@ def get_data(batch_size, device):
             return torch.cat([g1, g2], dim=1)
 
               
-    ou_sde = HestonSDE(mu=0.00, theta=-0.1, xi=0.4, kappa=0.2, corr = 0.25).to(device)
-    s0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
-    v0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 2 - 1
+    ou_sde = HestonSDE(mu=0.02, theta=0.004, xi=0.6, kappa=3, corr = 0.6).to(device)
+    s0 = torch.rand(dataset_size, device=device).unsqueeze(-1) * 100 + 20
+    v0 = torch.rand(dataset_size, device=device).unsqueeze(-1) 
     y0 = torch.cat([s0, v0], dim=1)
     ts = torch.linspace(0, t_size - 1, t_size, device=device)
     ys = torchsde.sdeint(ou_sde, y0, ts, dt=1e-1)
@@ -272,7 +272,62 @@ def get_data(batch_size, device):
 
     return ts, data_size, dataloader
 
+###################
+# We'll plot some results at the end.
+###################
+def plot(ts, generator, dataloader, num_plot_samples, plot_locs):
+    # Get samples
+    real_samples, = next(iter(dataloader))
+    assert num_plot_samples <= real_samples.size(0)
+    real_samples = torchcde.LinearInterpolation(real_samples).evaluate(ts)
+    real_samples = real_samples[..., 1]
 
+    with torch.no_grad():
+        generated_samples = generator(ts, real_samples.size(0)).cpu()
+    generated_samples = torchcde.LinearInterpolation(generated_samples).evaluate(ts)
+    generated_samples = generated_samples[..., 1]
+
+    # Plot histograms
+    for prop in plot_locs:
+        time = int(prop * (real_samples.size(1) - 1))
+        real_samples_time = real_samples[:, time]
+        generated_samples_time = generated_samples[:, time]
+        _, bins, _ = plt.hist(real_samples_time.cpu().numpy(), bins=32, alpha=0.7, label='Real', color='dodgerblue',
+                              density=True)
+        bin_width = abs(bins[1] - bins[0])
+
+
+
+        num_bins = max(int(abs(generated_samples_time.max() - generated_samples_time.min().item()) // bin_width),1)
+
+
+        plt.hist(generated_samples_time.cpu().numpy(), bins=num_bins, alpha=0.7, label='Generated', color='crimson',
+                 density=True)
+        plt.legend()
+        plt.xlabel('Value')
+        plt.ylabel('Density')
+        plt.title(f'Marginal distribution at time {time}.')
+        plt.tight_layout()
+        plt.show()
+
+    real_samples = real_samples[:num_plot_samples]
+    generated_samples = generated_samples[:num_plot_samples]
+
+    # Plot samples
+    real_first = True
+    generated_first = True
+    for real_sample_ in real_samples:
+        kwargs = {'label': 'Real'} if real_first else {}
+        plt.plot(ts.cpu(), real_sample_.cpu(), color='dodgerblue', linewidth=0.5, alpha=0.7, **kwargs)
+        real_first = False
+    for generated_sample_ in generated_samples:
+        kwargs = {'label': 'Generated'} if generated_first else {}
+        plt.plot(ts.cpu(), generated_sample_.cpu(), color='crimson', linewidth=0.5, alpha=0.7, **kwargs)
+        generated_first = False
+    plt.legend()
+    plt.title(f"{num_plot_samples} samples from both real and generated distributions.")
+    plt.tight_layout()
+    plt.show()
 
 
 
@@ -313,18 +368,23 @@ def main(
         num_layers=1,          # How many hidden layers to have in the various MLPs.
 
         # Training hyperparameters. Be prepared to tune these very carefully, as with any GAN.
-        generator_lr=2e-4,      # Learning rate often needs careful tuning to the problem.
-        discriminator_lr=1e-3,  # Learning rate often needs careful tuning to the problem.
+        generator_lr=0.001,      # Learning rate often needs careful tuning to the problem.
+        discriminator_lr=0.0002,  # Learning rate often needs careful tuning to the problem.
         batch_size=1024,        # Batch size.
         steps=10000,            # How many steps to train both generator and discriminator for.
-        init_mult1=3,           # Changing the initial parameter size can help.
-        init_mult2=0.5,         #
+        init_mult1=0.8,           # Changing the initial parameter size can help.
+        init_mult2=0.1,         #
         weight_decay=0.01,      # Weight decay.
         swa_step_start=5000,    # When to start using stochastic weight averaging.
 
         # Evaluation and plotting hyperparameters
-        steps_per_print=10,                   # How often to print the loss.
-):
+        steps_per_print=10,               # How often to print the loss.
+        num_plot_samples=50,                  # How many samples to use on the plots at the end.
+        plot_locs=(0.1, 0.3, 0.5, 0.7, 0.9),                     # How often to print the loss.
+):  
+    
+    unaveraged_file = open("Hestonunaveragedloss.txt", "w")
+    averaged_file = open("Hestonaveragedloss.txt", "w")
     is_cuda = torch.cuda.is_available()
     device = 'cuda' if is_cuda else 'cpu'
     if not is_cuda:
@@ -398,13 +458,21 @@ def main(
                                                     averaged_discriminator.module)
                 trange.write(f"Step: {step:3} Loss (unaveraged): {total_unaveraged_loss:.4f} "
                              f"Loss (averaged): {total_averaged_loss:.4f}")
+                averaged_file.write(f"{step}\t{total_averaged_loss}\n")
+
             else:
                 trange.write(f"Step: {step:3} Loss (unaveraged): {total_unaveraged_loss:.4f}")
+    unaveraged_file.write(f"{step}\t{total_unaveraged_loss}\n")
+
+    unaveraged_file.close()
+    averaged_file.close()
+
     generator.load_state_dict(averaged_generator.module.state_dict())
     discriminator.load_state_dict(averaged_discriminator.module.state_dict())
-
+    
     _, _, test_dataloader = get_data(batch_size=batch_size, device=device)
 
+    plot(ts, generator, test_dataloader, num_plot_samples, plot_locs)
 
 
 

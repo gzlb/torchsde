@@ -63,49 +63,28 @@ class StochasticLorenz(object):
     noise_type = "diagonal"
     sde_type = "ito"
 
-    def __init__(self, a: Sequence = (.02, 3, 0.004), b: Sequence = (3)):
+    def __init__(self, a: Sequence = (10., 28., 8 / 3), b: Sequence = (.1, .28, .3)):
         super(StochasticLorenz, self).__init__()
         self.a = a
         self.b = b
 
     def f(self, t, y):
-        x1, x2 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
+        x1, x2, x3 = torch.split(y, split_size_or_sections=(1, 1, 1), dim=1)
         a1, a2, a3 = self.a
 
-        f1 = a1 * x1
-        f2 = a2 * (a3 - x2) 
-    
-        return torch.cat([f1, f2], dim=1)
-
-        # a1 * x1
-        # a2 * (a3 - x2) 
+        f1 = a1 * (x2 - x1)
+        f2 = a2 * x1 - x2 - x1 * x3
+        f3 = x1 * x2 - a3 * x3
+        return torch.cat([f1, f2, f3], dim=1)
 
     def g(self, t, y):
-        x1, x2 = torch.split(y, split_size_or_sections=(1, 1), dim=1)
-        sqrt_x2 = torch.where(x2 < 0, torch.zeros_like(x2), torch.sqrt(x2))
+        x1, x2, x3 = torch.split(y, split_size_or_sections=(1, 1, 1), dim=1)
+        b1, b2, b3 = self.b
 
-        # Set values less than zero to zero
-
-        b1 = self.b
-        g1 = sqrt_x2 
-        g2 = b1* sqrt_x2 
-        
-        return torch.cat([g1, g2], dim=1)
-
-        '''
-        S_t = x1
-        v_t = x2
-
-        mu =a1
-        kappa = a2
-        theta = a3
-        psi = a4 
-
-
-        g_1 x1 * sqrt(x2)
-
-        g_2 a4 * sqrt(x2)
-        '''
+        g1 = x1 * b1
+        g2 = x2 * b2
+        g3 = x3 * b3
+        return torch.cat([g1, g2, g3], dim=1)
 
     @torch.no_grad()
     def sample(self, x0, ts, noise_std, normalize):
@@ -230,73 +209,63 @@ class LatentSDE(nn.Module):
 
 
 def make_dataset(t0, t1, batch_size, noise_std, train_dir, device):
-    # data_path = os.path.join(train_dir, 'lorenz_data.pth')
-    # if os.path.exists(data_path):
-    #     data_dict = torch.load(data_path)
-    #     xs, ts = data_dict['xs'], data_dict['ts']
-    #     logging.warning(f'Loaded toy data at: {data_path}')
-    #     if xs.shape[1] != batch_size:
-    #         raise ValueError("Batch size has changed; please delete and regenerate the data.")
-    #     if ts[0] != t0 or ts[-1] != t1:
-    #         raise ValueError("Times interval [t0, t1] has changed; please delete and regenerate the data.")
-    # else:
-    corr = 0.5
-    y1 = torch.randn(batch_size, 1, device=device)
-    y2_temp = torch.randn(batch_size, 1, device=device)
-    y2 = corr*y1 + np.sqrt(1 - corr**2)*y2_temp  
-    
+    data_path = os.path.join(train_dir, 'none')
+    if os.path.exists(data_path):
+        data_dict = torch.load(data_path)
+        xs, ts = data_dict['xs'], data_dict['ts']
+        logging.warning(f'Loaded toy data at: {data_path}')
+        if xs.shape[1] != batch_size:
+            raise ValueError("Batch size has changed; please delete and regenerate the data.")
+        if ts[0] != t0 or ts[-1] != t1:
+            raise ValueError("Times interval [t0, t1] has changed; please delete and regenerate the data.")
+    else:
+        _y0 = torch.randn(batch_size, 3, device=device)
+        ts = torch.linspace(t0, t1, steps=100, device=device)
+        xs = StochasticLorenz().sample(_y0, ts, noise_std, normalize=True)
 
-
-    # Concatenate the one-dimensional objects to create _y0
-    _y0 = torch.cat((y1, y2), dim=1)
-
-
-    # _y0 = torch.randn(batch_size, 3, device=device)
-    ts = torch.linspace(t0, t1, steps=100, device=device)
-    xs = StochasticLorenz().sample(_y0, ts, noise_std, normalize=True)
-
-    # os.makedirs(os.path.dirname(data_path), exist_ok=True)
-    # torch.save({'xs': xs, 'ts': ts}, data_path)
-    # logging.warning(f'Stored toy data at: {data_path}')
-
-    # print(torch.load(data_path))
+        os.makedirs(os.path.dirname(data_path), exist_ok=True)
+        torch.save({'xs': xs, 'ts': ts}, data_path)
+        logging.warning(f'Stored toy data at: {data_path}')
     return xs, ts
 
 
 def vis(xs, ts, latent_sde, bm_vis, img_path, num_samples=10):
     fig = plt.figure(figsize=(20, 9))
     gs = gridspec.GridSpec(1, 2)
-    ax00 = fig.add_subplot(gs[0, 0])
-    ax01 = fig.add_subplot(gs[0, 1])
+    ax00 = fig.add_subplot(gs[0, 0], projection='3d')
+    ax01 = fig.add_subplot(gs[0, 1], projection='3d')
 
     # Left plot: data.
-    z1, z2= np.split(xs.cpu().numpy(), indices_or_sections=2, axis=-1)
-    [ax00.plot(z1[:, i, 0], z2[:, i, 0]) for i in range(num_samples)]
-    ax00.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], marker='x')
+    z1, z2, z3 = np.split(xs.cpu().numpy(), indices_or_sections=3, axis=-1)
+    [ax00.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
+    ax00.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
     ax00.set_yticklabels([])
     ax00.set_xticklabels([])
+    ax00.set_zticklabels([])
     ax00.set_xlabel('$z_1$', labelpad=0., fontsize=16)
     ax00.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
+    ax00.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
     ax00.set_title('Data', fontsize=20)
     xlim = ax00.get_xlim()
     ylim = ax00.get_ylim()
+    zlim = ax00.get_zlim()
 
     # Right plot: samples from learned model.
     xs = latent_sde.sample(batch_size=xs.size(1), ts=ts, bm=bm_vis).cpu().numpy()
-    z1, z2 = np.split(xs, indices_or_sections=2, axis=-1)
+    z1, z2, z3 = np.split(xs, indices_or_sections=3, axis=-1)
 
-    [ax01.plot(z1[:, i, 0], z2[:, i, 0]) for i in range(num_samples)]
-    ax01.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], marker='x')
+    [ax01.plot(z1[:, i, 0], z2[:, i, 0], z3[:, i, 0]) for i in range(num_samples)]
+    ax01.scatter(z1[0, :num_samples, 0], z2[0, :num_samples, 0], z3[0, :10, 0], marker='x')
     ax01.set_yticklabels([])
     ax01.set_xticklabels([])
-
+    ax01.set_zticklabels([])
     ax01.set_xlabel('$z_1$', labelpad=0., fontsize=16)
     ax01.set_ylabel('$z_2$', labelpad=.5, fontsize=16)
-
+    ax01.set_zlabel('$z_3$', labelpad=0., horizontalalignment='center', fontsize=16)
     ax01.set_title('Samples', fontsize=20)
     ax01.set_xlim(xlim)
     ax01.set_ylim(ylim)
-
+    ax01.set_zlim(zlim)
 
     plt.savefig(img_path)
     plt.close()
@@ -316,15 +285,15 @@ def main(
         pause_every=50,
         noise_std=0.01,
         adjoint=False,
-        train_dir='./',
+        train_dir='.',
         method="euler",
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    file_loss = open("LatentHeston.txt", "w")
+    file_loss = open("LatentSDE.txt", "w")
 
     xs, ts = make_dataset(t0=t0, t1=t1, batch_size=batch_size, noise_std=noise_std, train_dir=train_dir, device=device)
     latent_sde = LatentSDE(
-        data_size=2,
+        data_size=3,
         latent_size=latent_size,
         context_size=context_size,
         hidden_size=hidden_size,
@@ -352,9 +321,9 @@ def main(
                 f'global_step: {global_step:06d}, lr: {lr_now:.5f}, '
                 f'log_pxs: {log_pxs:.4f}, log_ratio: {log_ratio:.4f} loss: {loss:.4f}, kl_coeff: {kl_scheduler.val:.4f}'
             )
-
             file_loss.write(f"{global_step:06d}\t{loss:.4f}\n")
-            img_path = os.path.join(train_dir, f'Heston{global_step:06d}.pdf')
+
+            img_path = os.path.join(train_dir, f'global_step_{global_step:06d}.pdf')
             vis(xs, ts, latent_sde, bm_vis, img_path)
 
 

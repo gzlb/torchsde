@@ -1,0 +1,67 @@
+Warning: CUDA not available; falling back to CPU but this is likely to be very slow.
+Calibrating with hyperparameters: {'initial_noise_size': 5, 'noise_size': 2, 'hidden_size': 16, 'mlp_size': 16, 'num_layers': 1, 
+'generator_lr': 0.0002, 'discriminator_lr': 0.0005, 'batch_size': 1024, 'steps': 1000, 'init_mult1': 0.8, 'init_mult2': 0.3, 'weight_decay': 0.01, 'swa_step_start': 5000, 'steps_per_print': 10, 'num_plot_samples': 50, 'plot_locs': (0.1, 0.3, 0.5, 0.7, 0.9), 'error': [], 'unaveraged_file': <_io.TextIOWrapper name='Hestonunaveragedloss.txt' mode='w' encoding='UTF-8'>, 'averaged_file': <_io.TextIOWrapper name='Hest
+onaveragedloss.txt' mode='w' encoding='UTF-8'>, 'is_cuda': False, 'device': 'cpu'}
+
+
+Warning: CUDA not available; falling back to CPU but this is likely to be very slow.
+Calibrating with hyperparameters: {'initial_noise_size': 5, 'noise_size': 2, 'hidden_size': 16, '
+mlp_size': 16, 'num_layers': 1, 'generator_lr': 0.001, 'discriminator_lr': 0.0001, 'batch_size': 
+1024,
+ 'steps': 1000, 'init_mult1': 1, 'init_mult2': 0.1, 'weight_decay': 0.01, 'swa_step_start': 5000, 
+ 'steps_per_print': 10, 'num_plot_samples': 50, 'plot_locs': (0.1, 0.3, 0.5, 0.7, 0.9), 'error': [], 'unaveraged_file': <_io.TextIOWrapper name='Hestonunaveragedloss.txt' mode='w' encoding='UTF-8'>, 'averaged_file': <_io.TextIOWrapper name='Hestonaveragedloss.txt' mode='w' encoding='UTF-8'>, 'is_cuda': False, 'device': 'cpu'}
+
+
+ Warning: CUDA not available; falling back to CPU but this is likely to be very slow.
+Calibrating with hyperparameters: {'initial_noise_size': 5, 'noise_size': 2, 'hidden_size': 16, 'mlp_size': 16, 'num_layers': 1, 'generator_lr': 0.001, 'discriminator_lr': 0.0001, 'batch_size': 1024, 'steps': 1000, 'init_mult1': 1.3, 'init_mult2': 0.3, 'weight_decay': 0.01, 'swa_step_start': 5000, 'steps_per_print': 10, 'num_plot_samples': 50, 'plot_locs': (0.1, 0.3, 0.5, 0.7, 0.9), 'error': [], 'unaveraged_file': <_io.TextIOWrapper name='Hestonunaveragedloss.txt' mode='w' encoding='UTF-8'>, 'averaged_file': <_io.TextIOWrapper name='Hestonaveragedloss.txt' mode='w' encoding='UTF-8'>, 'is_cuda': False, 'device': 'cpu'}
+
+
+
+Warning: CUDA not available; falling back to CPU but this is likely to be very slow.
+Calibrating with hyperparameters: {'initial_noise_size': 5, 'noise_size': 2,
+ 'hidden_size': 16, 'mlp_size': 16, 'num_layers': 1, 
+ 'generator_lr': 0.001, 'discriminator_lr': 0.0002, 'batch_size': 1024,
+  'steps': 1000, 'init_mult1': 0.8, 'init_mult2'
+  : 0.1, 'weight_decay': 0.01, 'swa_step_start': 5000, 'steps_per_print': 10, 'num_plot_samples': 50, 'plot_locs': (0.1, 0.3, 0.5, 0.7, 0.9), 'error': [], 'unaveraged_file': <_io.TextIOWrapper name='Hestonunaveragedloss.txt' mode='w' encoding='UTF-8'>, 'averaged_file': <_io.TextIOWrapper name='Hestonaveragedloss.txt' mode='w' encoding='UTF-8'>, 'is_cuda': False, 'device': 'cpu'}
+Step:   0 Loss (unaveraged): 24.5107                                                                                                           
+Step:  10 Loss (unaveraged): 24.3003                                                                                                           
+Step:  20 Loss (unaveraged): 24.0749                                                                                                           
+Step:  30 Loss (unaveraged): 23.8397                                                                                                           
+Step:  40 Loss (unaveraged): 23.5905                                                                                                           
+Step:  50 Loss (unaveraged): 23.3326                                                                                                           
+Step:  60 Loss (unaveraged): 23.0658                                                                                                           
+Step:  70 Loss (unaveraged): 22.7849                                                                                                           
+Step:  80 Loss (unaveraged): 22.4951                                                                                                           
+Step:  90 Loss (unaveraged): 22.1959                                                                                                           
+Step: 100 Loss (unaveraged): 21.8883                                                                                                           
+Step: 110 Loss (unaveraged): 21.5722                                                                                                           
+Step: 120 Loss (unaveraged): 21.2464                                                                                                           
+Step: 130 Loss (unaveraged): 20.9120                                                                                                           
+Step: 140 Loss (unaveraged): 20.5708                                                                                                           
+Step: 150 Loss (unaveraged): 20.2187                                                                                                           
+Step: 160 Loss (unaveraged): 19.8615                                                                                                           
+Step: 170 Loss (unaveraged): 19.4925                                                                                                           
+Step: 180 Loss (unaveraged): 19.1199                                                                                                           
+Step: 190 Loss (unaveraged): 18.7370                                                                                                           
+Step: 200 Loss (unaveraged): 18.3487                                                                                                           
+Step: 210 Loss (unaveraged): 17.9489                                                                                                           
+Step: 220 Loss (unaveraged): 17.5417                                                                                                           
+Step: 230 Loss (unaveraged): 17.1337                                                                                                           
+Step: 240 Loss (unaveraged): 16.7113                                                                                                           
+Step: 250 Loss (unaveraged): 16.2858                                                                                                           
+Step: 260 Loss (unaveraged): 15.8470                                                                                                           
+Step: 270 Loss (unaveraged): 15.4077                                                                                                           
+Step: 280 Loss (unaveraged): 14.9577                                                                                                           
+Step: 290 Loss (unaveraged): 14.5006                                                                                                           
+Step: 300 Loss (unaveraged): 14.0345                                                                                                           
+Step: 310 Loss (unaveraged): 13.5634                                                                                                           
+Step: 320 Loss (unaveraged): 13.0866                                                                                                           
+Step: 330 Loss (unaveraged): 12.5968                                                                                                           
+Step: 340 Loss (unaveraged): 12.1030                                                                                                           
+Step: 350 Loss (unaveraged): 11.6017                                                                                                           
+Step: 360 Loss (unaveraged): 11.0910                                                                                                           
+Step: 370 Loss (unaveraged): 10.5745                                                                                                           
+Step: 380 Loss (unaveraged): 10.0469                                                                                                           
+Step: 390 Loss (unaveraged): 9.5155                                                                                                            
+Step: 400 Loss (unaveraged): 8.9750                                                                                                            
+Step: 410 Loss (unaveraged): 8.4249  
