@@ -274,6 +274,7 @@ def plot(ts, generator, dataloader, num_plot_samples, plot_locs):
                               density=True)
         bin_width = abs(bins[1] - bins[0])
 
+        ## print both num bins for generated samples and for real samples 
 
 
         num_bins = max(int(abs(generated_samples_time.max() - generated_samples_time.min().item()) // bin_width),1)
